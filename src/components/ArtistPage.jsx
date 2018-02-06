@@ -6,8 +6,12 @@ import DATA from '../data/Data'
 
 
 class ArtistPage extends Component {
-	state = { visible: false }
-  	toggleVisibility = () => this.setState({ visible: !this.state.visible })
+	constructor() {
+		super();
+		this.state = { visible: false };
+	}
+	
+  	toggleVisibility = () => this.setState({ visible: !this.state.visible }) // eslint: disable
 
 	render() {
  	const { visible } = this.state

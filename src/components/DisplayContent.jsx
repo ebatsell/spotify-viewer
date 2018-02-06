@@ -3,7 +3,10 @@ import { Card, Grid, Header, Table } from 'semantic-ui-react';
 
 class DisplayContent extends Component {
 
-  state = {content: null}
+  constructor() {
+    super();
+    this.state = {content: null};
+  }
 
   /*
   componentDidUpdate() {
@@ -21,8 +24,8 @@ class DisplayContent extends Component {
   //Use unique methods for each type of entry - we are going to be making this look great
   //which requires doing special things for each parameter
   getExtra(content) {
-    let features = content.state.features
-    let track = content.props.track
+    const features = content.props.features
+    const track = content.props.track
     return (
       <Grid columns={2}>
         <Grid.Row>
@@ -44,22 +47,21 @@ class DisplayContent extends Component {
               </Table.Body>
             </Table>
           </Grid.Column>
-
           <Grid.Column>
-            <Table unstac kable>
-            <Table.Body>
-              <Table.Row>
-                <Table.Cell> <b>Tempo</b> </Table.Cell>
-                <Table.Cell> {Math.round(features.tempo)} </Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.Cell> <b>Key</b> </Table.Cell>
-                <Table.Cell> {features.key} </Table.Cell>
-              </Table.Row>
-              <Table.Row>
-                <Table.Cell> <b>Happiness</b> </Table.Cell>
-                <Table.Cell> {features.valence} </Table.Cell>
-              </Table.Row>
+            <Table unstackable>
+              <Table.Body>
+                <Table.Row>
+                  <Table.Cell> <b>Tempo</b> </Table.Cell>
+                  <Table.Cell> {Math.round(features.tempo)} </Table.Cell>
+                </Table.Row>
+                <Table.Row>
+                  <Table.Cell> <b>Key</b> </Table.Cell>
+                  <Table.Cell> {features.key} </Table.Cell>
+                </Table.Row>
+                <Table.Row>
+                  <Table.Cell> <b>Happiness</b> </Table.Cell>
+                  <Table.Cell> {features.valence} </Table.Cell>
+                </Table.Row>
               </Table.Body>
             </Table>
           </Grid.Column>
@@ -69,10 +71,8 @@ class DisplayContent extends Component {
   }
 
   songContent(content) {
-    let tr = content.props.track;
-    let ft = content.state.features;
-    console.log(tr)
-    // Include album art?
+    const tr = content.props.track;
+    const ft = content.props.features;
     return (
       <Card
         fluid
@@ -96,13 +96,11 @@ class DisplayContent extends Component {
   }
 
   render() {
-    console.log('trying to render');
-    let content = <div />
     if (this.props.type === 'artist')
-      content = this.artistContent(this.props.content);  
-    else if (this.props.type === 'song')
-      content = this.songContent(this.props.content); 
-    return content;
+      return this.artistContent(this.props.content);  
+    if (this.props.type === 'song')
+      return this.songContent(this.props.content); 
+    return <div />;
   }
 }
 
