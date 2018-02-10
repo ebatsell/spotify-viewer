@@ -7,15 +7,28 @@ import DisplayContent from './DisplayContent';
 
 
 class TrackSegment extends Component {
+  static propTypes = {
+    contentCallback: PropTypes.function,
+  };
   constructor() {
     super();
-    this.propTypes = {
-      contentCallback: PropTypes.function,
-    };
+    this.state = {
+      secondary: false,
+    }
+    this.onHover = this.onHover.bind(this);
+    this.onLeave = this.onLeave.bind(this);
   }
 
   parentCallback() {
     this.props.contentCallback(this);
+  }
+
+  onHover() {
+    this.setState({secondary: true});
+  }
+
+  onLeave() {
+    this.setState({secondary: false});
   }
 
   render() {
@@ -23,8 +36,13 @@ class TrackSegment extends Component {
     // console.log(this.props.track.album.name);
     // console.log(this.props.track.popularity);
     return (
-      <Segment textAlign="center" onClick={this.parentCallback.bind(this)}> 
-        {this.props.track.name}
+      <Segment 
+      textAlign="center" 
+      secondary={this.state.secondary} 
+      onClick={this.parentCallback.bind(this)} 
+      onMouseOver={this.onHover}
+      onMouseLeave={this.onLeave}> 
+        {this.props.rank + '. ' + this.props.track.name}
       </Segment>
     );
   }
@@ -50,9 +68,15 @@ class TrackList extends Component {
     this.getTrackList();
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.timeRange !== this.props.timeRange) {
+      // getTrackList -> getTrackFeatures -> setTrackList -> render
+      this.getTrackList();
+    }
+  }
+
 
   getTrackList() {
-    console.log('Token is ' + this.props.token);
     const _this = this;
     $.ajax({
       url: 'https://api.spotify.com/v1/me/top/tracks?limit=50&offset=0&time_range=' + this.props.timeRange,
@@ -93,11 +117,11 @@ class TrackList extends Component {
 
   setTrackList(trackData, featureData) {
     console.log('made it in tracks list')
-    let trackList = trackData.map(track => {
+    let trackList = trackData.map((track, index) => {
       // Function on the array object using functional programming
       let featureIndex = featureData.findIndex(f => f.id === track.id); 
       let feature = featureData[featureIndex];
-      return <TrackSegment track={track} features={feature} contentCallback={this.contentCallback} />;
+      return <TrackSegment track={track} features={feature} rank={index+1} contentCallback={this.contentCallback} />;
     });
 
     this.setState({tracks: trackList});
@@ -109,13 +133,36 @@ class TrackList extends Component {
 }
 
 class ArtistSegment extends Component {
-  callBackToParent(e) {
-    e.preventDefault();
-    this.props.artistCallback(this.props.artist);
+  constructor() {
+    super();
+    this.state = {
+      secondary: false,
+    }
+    this.onHover = this.onHover.bind(this);
+    this.onLeave = this.onLeave.bind(this);
   }
 
+  callBackToParent() {
+    this.props.artistCallback(this.props.artist);
+  }
+  onHover() {
+    this.setState({secondary: true});
+  }
+
+  onLeave() {
+    this.setState({secondary: false});
+  }
   render() {
-    return <Segment textAlign='center' onClick={this.callBackToParent.bind(this)}> {this.props.artist.name} </Segment>
+    return (
+      <Segment 
+      textAlign='center' 
+      onClick={this.callBackToParent.bind(this)}
+      secondary={this.state.secondary}
+      onMouseOver={this.onHover}
+      onMouseLeave={this.onLeave}> 
+        {this.props.rank + '. ' + this.props.artist.name} 
+      </Segment>
+    );
   }
 }
 
@@ -133,21 +180,20 @@ class ArtistsList extends Component {
     }
   }
 
-  componentWillReceiveProps(next) {
-    if (this.props.timeRange !== next.timeRange) {
-      console.log('doing something')
-    }
-  }
 
   componentDidMount() {
     this.getArtistData();
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.timeRange !== this.props.timeRange) {
+      this.getArtistData();
+    }
   }
   
   //We'll probably want to cache this
   // Also -- put this in a componentDidMount when dealing with real API data??
   getArtistData() {
-    console.log('TOKEN IS')
-    console.log(this.props.token)
     let t = this;
     function callback(res) {
       t.setArtistList(res);
@@ -159,11 +205,10 @@ class ArtistsList extends Component {
         'Content-Type': 'application/json',
       },
       success: function(response) {
-        console.log(response);
-        // let jsonData = JSON.parse(response.responseText);
         callback(response.items);
       }, 
       error: function(response) {
+        console.log('API request error')
         console.log(response);
       }
     });
@@ -171,8 +216,8 @@ class ArtistsList extends Component {
 
 
   setArtistList(artistData) {
-    let dataList = artistData.map(artist => {
-        return <ArtistSegment artist={artist} artistCallback={this.artistCallback} />;
+    let dataList = artistData.map((artist, index) => {
+        return <ArtistSegment artist={artist} rank={index + 1} artistCallback={this.artistCallback} />;
     })
     console.log(dataList);
     this.setState({artists : dataList});
@@ -193,8 +238,6 @@ class Content extends Component {
       timeRange: 'short_term'
     };
     this.setArtistContent = (artist) => {
-      console.log('my artist')
-      console.log(artist)
       this.setState( {
         displayType: 'artist',
         content: artist
@@ -202,8 +245,6 @@ class Content extends Component {
     }
 
     this.setTrackContent = (song) => {
-      console.log(song.props.features)
-      console.log(song)
       this.setState( {
         displayType: 'song',
         content: song
@@ -219,6 +260,7 @@ class Content extends Component {
   }
 
   render() {
+    console.log('Re rendering?')
     const artists = (<ArtistsList 
       token={this.props.token} 
       timeRange={this.state.timeRange} 
@@ -249,7 +291,7 @@ class Content extends Component {
               fluid
               selection
               options={timeOptions}
-              onChange={this.setTimeOption.bind(this)}
+              onChange={(e, data) => this.setState({timeRange: data.value})}
               />
             <Tab menu={{widths: 3}} panes={panes} />
           </Grid.Column>
